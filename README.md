@@ -1,21 +1,54 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# CT Reply Guy - AI Twitter Agent
 
-# Run and deploy your AI Studio app
+Proyek ini berisi aplikasi **Android** dan aplikasi **Web (React + Vite)** untuk menghasilkan balasan Twitter (X) secara otomatis dan cerdas menggunakan berbagai model AI (Gemini, Claude, GPT, dan DeepSeek).
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/967d9232-b88c-466b-9168-63c86b09e3b1
+## 🌐 1. Web Application (React + Vite)
 
-## Run Locally
+Aplikasi Web dirancang dengan tampilan antarmuka bertema gelap (*cyberpunk degen*) modern menggunakan glassmorphism, sangat responsif, dan berjalan sepenuhnya di sisi klien (*client-side*).
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+### Fitur Utama:
+* **Pilihan Karakter / Nada Bicara**: Degen, Alpha Hunter, Shitposter, Casual, dan Organic.
+* **Mendukung Banyak Model**: Gemini 1.5/2.0/2.5/3.5, GPT-4o, Claude 3.5, DeepSeek V3/R1 (baik langsung maupun via OpenRouter).
+* **Riwayat Balasan**: Otomatis tersimpan secara lokal di browser (`localStorage`) Anda.
+* **Auto-Healing**: Sistem fallback otomatis pada Gemini jika model utama terkena batas limit/error.
+
+### Cara Menjalankan Lokal:
+1. Masuk ke folder `web`:
+   ```bash
+   cd web
+   ```
+2. Instal semua dependensi:
+   ```bash
+   npm install
+   ```
+3. Jalankan server lokal:
+   ```bash
+   npm run dev
+   ```
+4. Buka browser Anda dan akses: [http://localhost:3007](http://localhost:3007)
 
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+---
+
+## 🤖 2. Android Application (Kotlin)
+
+Aplikasi Android bawaan asli (*native*) yang siap diimpor ke Android Studio.
+
+### Langkah Menjalankan:
+1. Buka **Android Studio**.
+2. Pilih **Open** dan arahkan ke folder utama proyek ini.
+3. Buat file bernama `.env` di direktori utama proyek Android dan tambahkan kunci API Gemini Anda:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+4. Hapus baris berikut dari file `build.gradle.kts` di dalam folder `app`:
+   ```kotlin
+   signingConfig = signingConfigs.getByName("debugConfig")
+   ```
+5. Jalankan aplikasi di emulator atau perangkat fisik Anda.
+
+---
+
+*Dibuat oleh Roziqin.*
