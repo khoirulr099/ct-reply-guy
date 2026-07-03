@@ -762,3 +762,23 @@ body {
 .app-footer a:hover {
   text-decoration: underline;
 }
+
+/* Profile Manager Layout */
+.profile-selector-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.profile-selection-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.profile-actions-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
