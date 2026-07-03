@@ -6,7 +6,6 @@ const STORAGE_KEYS = {
   ACTIVE_PROFILE_ID: 'ct_reply_guy_active_profile_id',
   TONE: 'ct_reply_guy_tone',
   HISTORY: 'ct_reply_guy_history',
-  // Old keys for migration
   OLD_API_KEY: 'ct_reply_guy_api_key',
   OLD_BASE_URL: 'ct_reply_guy_base_url',
   OLD_MODEL: 'ct_reply_guy_model'
@@ -24,7 +23,6 @@ export default function App() {
       console.error("Failed to parse profiles", e);
     }
 
-    // Migration from old single-profile settings if they exist
     const oldKey = localStorage.getItem(STORAGE_KEYS.OLD_API_KEY) || '';
     const oldBase = localStorage.getItem(STORAGE_KEYS.OLD_BASE_URL) || '';
     const oldModel = localStorage.getItem(STORAGE_KEYS.OLD_MODEL) || 'gemini-3.5-flash';
@@ -55,14 +53,19 @@ export default function App() {
     isCustomModel: false
   };
 
-  // Profile Editor Form State (binds to activeProfile and changes locally before saving)
+  // Profile Editor Form State
   const [profileName, setProfileName] = useState(activeProfile.name);
   const [profileApiKey, setProfileApiKey] = useState(activeProfile.apiKey);
   const [profileBaseUrl, setProfileBaseUrl] = useState(activeProfile.customBaseUrl);
   const [profileModel, setProfileModel] = useState(activeProfile.model);
   const [isCustomModel, setIsCustomModel] = useState(activeProfile.isCustomModel);
   
-  // Collapsible setting for Custom Base URL
+  // Settings Expand/Collapse state
+  const [isSettingsOpen, setIsSettingsOpen] = useState(() => {
+    // Open by default if no API key is configured
+    return !activeProfile.apiKey;
+  });
+
   const [showBaseUrl, setShowBaseUrl] = useState(!!activeProfile.customBaseUrl);
 
   // Sync editor form when active profile changes
@@ -127,6 +130,7 @@ export default function App() {
 
     setProfiles(prev => [...prev, newProfile]);
     setActiveProfileId(newId);
+    setIsSettingsOpen(true); // Open settings to configure the new profile
   };
 
   // Save profile changes to the list
@@ -218,7 +222,6 @@ export default function App() {
       return;
     }
 
-    // Auto-save unsaved profile configurations on generate if changed
     const hasUnsavedChanges = 
       profileName !== activeProfile.name ||
       profileApiKey !== activeProfile.apiKey ||
@@ -246,7 +249,6 @@ export default function App() {
       setGeneratedReply(result.reply);
       setUsedModel(result.usedModel);
 
-      // Save to history
       const newHistoryItem = {
         id: Date.now(),
         tweetContent: tweetInput,
@@ -293,343 +295,357 @@ export default function App() {
         </div>
         <div className={`api-status-badge ${profileApiKey ? 'connected' : 'disconnected'}`}>
           <span className="status-dot"></span>
-          {profileApiKey ? `PROFIL: ${profileName.toUpperCase()}` : 'API KEY BELUM DISET'}
+          {profileApiKey ? `${activeProfile.name.toUpperCase()} (${activeProfile.model})` : 'PENGATURAN DIBUTUHKAN'}
         </div>
       </header>
 
       {/* Grid Dashboard */}
       <div className="dashboard-grid">
         
-        {/* Left Column: Settings Panel (Profiles) */}
-        <aside className="glass-panel">
-          <div className="profile-selector-section">
-            <h2 className="panel-title" style={{ border: 'none', marginBottom: '1rem', paddingBottom: 0 }}>
-              <span>⚙️</span> Profil Konfigurasi
-            </h2>
-            
-            {/* Choose Profile Dropdown & New Button */}
-            <div className="profile-selection-row">
-              <select
-                className="select-input"
-                style={{ flex: 1 }}
-                value={activeProfileId}
-                onChange={(e) => setActiveProfileId(e.target.value)}
-              >
-                {profiles.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-              <button 
-                className="action-icon-btn" 
-                onClick={handleCreateProfile} 
-                title="Tambah Profil Baru"
-                style={{ height: '42px', width: '42px' }}
-              >
-                ➕
-              </button>
-            </div>
-          </div>
-
-          {/* Profile Details Editor */}
-          <div className="config-group" style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
-            
-            {/* Profile Name Input */}
-            <div className="form-field">
-              <label className="form-label" htmlFor="profile-name">
-                Nama Profil
-              </label>
-              <div className="input-wrapper">
-                <span className="input-icon">👤</span>
-                <input
-                  id="profile-name"
-                  className="text-input"
-                  type="text"
-                  placeholder="Contoh: Gemini Personal, OpenRouter..."
-                  value={profileName}
-                  onChange={(e) => setProfileName(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* API Key Input */}
-            <div className="form-field">
-              <label className="form-label" htmlFor="api-key">
-                API Key
-                <span className="label-info">Disimpan di browser Anda</span>
-              </label>
-              <div className="input-wrapper">
-                <span className="input-icon">🔑</span>
-                <input
-                  id="api-key"
-                  className="text-input"
-                  type="password"
-                  placeholder="Masukkan API Key..."
-                  value={profileApiKey}
-                  onChange={(e) => setProfileApiKey(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Custom URL settings toggle */}
-            <button className="settings-toggle" onClick={() => setShowBaseUrl(!showBaseUrl)}>
-              {showBaseUrl ? '▼ Sembunyikan Custom Base URL' : '▶ Tampilkan Custom Base URL'}
-            </button>
-
-            {/* Custom Base URL Input */}
-            {showBaseUrl && (
-              <div className="form-field" style={{ animation: 'slide-in 0.25s ease-out' }}>
-                <label className="form-label" htmlFor="custom-url">
-                  Custom Base URL
-                  <span className="label-info">Kosongkan jika menggunakan Gemini langsung</span>
-                </label>
-                <div className="input-wrapper">
-                  <span className="input-icon">🌐</span>
-                  <input
-                    id="custom-url"
-                    className="text-input"
-                    type="text"
-                    placeholder="https://api.openai.com/v1"
-                    value={profileBaseUrl}
-                    onChange={(e) => setProfileBaseUrl(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Model Select Options Toggle */}
-            <div className="form-field">
-              <div className="form-label">
-                <span>Engine / Model</span>
-                <button 
-                  className="settings-toggle" 
-                  onClick={() => setIsCustomModel(!isCustomModel)}
-                  style={{ textDecoration: 'underline' }}
-                >
-                  {isCustomModel ? 'Pilih dari Daftar' : 'Tulis Manual'}
-                </button>
-              </div>
-
-              {isCustomModel ? (
-                // Custom model manual text input
-                <div className="input-wrapper" style={{ animation: 'slide-in 0.25s ease-out' }}>
-                  <span className="input-icon">⚙️</span>
-                  <input
-                    className="text-input"
-                    type="text"
-                    placeholder="Contoh: grok-beta, deepseek-chat..."
-                    value={profileModel}
-                    onChange={(e) => setProfileModel(e.target.value)}
-                  />
-                </div>
-              ) : (
-                // Predefined dropdown list
-                <select
-                  className="select-input"
-                  value={MODELS.some(m => m.value === profileModel) ? profileModel : 'gemini-3.5-flash'}
-                  onChange={(e) => setProfileModel(e.target.value)}
-                >
-                  {MODELS.map(m => (
-                    <option key={m.value} value={m.value}>
-                      {m.label} ({m.provider.toUpperCase()})
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-
-            {/* Save & Delete Profile Buttons */}
-            <div className="profile-actions-row">
-              <button 
-                className="btn btn-primary" 
-                onClick={handleSaveProfile}
-                style={{ flex: 1, padding: '0.7rem' }}
-              >
-                {profileSaveSuccess ? '✅ Tersimpan' : '💾 Simpan Profil'}
-              </button>
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => handleDeleteProfile(activeProfileId)}
-                disabled={profiles.length <= 1}
-                title="Hapus Profil Ini"
-                style={{ padding: '0.7rem 1rem' }}
-              >
-                🗑️
-              </button>
-            </div>
-
-            {/* Tone Card Grid */}
-            <div className="form-field" style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-color)' }}>
-              <label className="form-label">
-                Pilih Karakter / Nada Bicara
-              </label>
-              <div className="tone-grid">
-                {TONES.map(t => (
-                  <button
-                    key={t.label}
-                    className={`tone-card ${selectedTone === t.label ? 'active' : ''}`}
-                    data-tone={t.label}
-                    onClick={() => setSelectedTone(t.label)}
-                  >
-                    <span className="tone-name">{t.label}</span>
-                    <span className="tone-desc">{t.description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-          </div>
-        </aside>
-
-        {/* Right Column: Generation Panel & History */}
-        <main className="main-column">
+        {/* Technical Settings Panel (Collapsible to be extremely split-screen friendly) */}
+        <aside className={`glass-panel settings-panel ${!isSettingsOpen ? 'collapsed' : ''}`}>
           
-          {/* Main Generator Box */}
-          <section className="glass-panel generator-panel">
-            <h2 className="panel-title">
-              <span>✍️</span> Input Konten Tweet
-            </h2>
-
-            <div className="input-header">
-              <label className="form-label" htmlFor="tweet-input">Tempel Tweet yang ingin Anda balas</label>
-              <span className="char-counter">{tweetInput.length} karakter</span>
-            </div>
-
-            <textarea
-              id="tweet-input"
-              className="tweet-textarea"
-              placeholder="Contoh: bitcoin is dumping again. is this the end of bullrun or just another dip for ants?"
-              value={tweetInput}
-              onChange={(e) => setTweetInput(e.target.value)}
-              disabled={isGenerating}
-            />
-
-            <div className="generator-actions">
-              <button 
-                className="btn btn-primary" 
-                onClick={handleGenerate}
-                disabled={isGenerating || !tweetInput.trim() || (!profileApiKey && !tweetInput.trim().startsWith('[menu:'))}
-              >
-                {isGenerating ? (
-                  <>
-                    <span className="spinner"></span>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <span>⚡</span>
-                    Generate Reply
-                  </>
-                )}
-              </button>
-              <button 
-                className="btn btn-secondary"
-                onClick={() => {
-                  setTweetInput('');
-                  setGeneratedReply(null);
-                  setApiError(null);
-                }}
-                disabled={isGenerating || !tweetInput}
-              >
-                Clear
-              </button>
-            </div>
-
-            {/* Error UI Card */}
-            {apiError && (
-              <div className="error-card">
-                <span>⚠️ {apiError}</span>
-                <button className="error-close-btn" onClick={() => setApiError(null)}>×</button>
+          {!isSettingsOpen ? (
+            /* Collapsed Summary View */
+            <div className="settings-summary-view" onClick={() => setIsSettingsOpen(true)}>
+              <div className="settings-summary-info">
+                <h3>⚙️ Pengaturan</h3>
+                <p>
+                  <span>👤 {activeProfile.name}</span>
+                  <span className="bullet-separator">•</span>
+                  <span>🤖 {activeProfile.model}</span>
+                </p>
               </div>
-            )}
+              <button className="btn btn-secondary btn-compact-toggle">
+                Ubah ⚙️
+              </button>
+            </div>
+          ) : (
+            /* Expanded Full Settings Form */
+            <div className="settings-full-view">
+              <div className="profile-selector-section">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <h2 className="panel-title" style={{ border: 'none', margin: 0, paddingBottom: 0 }}>
+                    <span>⚙️</span> Pengaturan API
+                  </h2>
+                  <button className="settings-toggle" onClick={() => setIsSettingsOpen(false)}>
+                    Sembunyikan ▲
+                  </button>
+                </div>
+                
+                {/* Choose Profile Dropdown & New Button */}
+                <div className="profile-selection-row">
+                  <select
+                    className="select-input"
+                    style={{ flex: 1 }}
+                    value={activeProfileId}
+                    onChange={(e) => setActiveProfileId(e.target.value)}
+                  >
+                    {profiles.map(p => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button 
+                    className="action-icon-btn" 
+                    onClick={handleCreateProfile} 
+                    title="Tambah Profil Baru"
+                    style={{ height: '42px', width: '42px' }}
+                  >
+                    ➕
+                  </button>
+                </div>
+              </div>
 
-            {/* Reply Output Card */}
-            {generatedReply && (
-              <div className="output-card">
-                <div className="output-header">
-                  <span className="output-badge">BALASAN DIHASILKAN ({selectedTone})</span>
-                  <div className="output-actions">
-                    <button 
-                      className="action-icon-btn"
-                      onClick={() => handleCopy(generatedReply, 'output')}
-                      title="Salin Balasan"
-                    >
-                      {copiedId === 'output' ? '✅' : '📋'}
-                    </button>
+              {/* Profile Details Editor */}
+              <div className="config-group" style={{ marginTop: '1.25rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border-color)' }}>
+                
+                {/* Profile Name Input */}
+                <div className="form-field">
+                  <label className="form-label" htmlFor="profile-name">
+                    Nama Profil
+                  </label>
+                  <div className="input-wrapper">
+                    <span className="input-icon">👤</span>
+                    <input
+                      id="profile-name"
+                      className="text-input"
+                      type="text"
+                      placeholder="Contoh: Gemini Personal, OpenRouter..."
+                      value={profileName}
+                      onChange={(e) => setProfileName(e.target.value)}
+                    />
                   </div>
                 </div>
-                <p className="output-text">{generatedReply}</p>
-                <div className="output-metadata">
-                  <span>Profil: {activeProfile.name}</span>
-                  <span>•</span>
-                  <span>Engine: {usedModel || profileModel}</span>
-                  <span>•</span>
-                  <span>{generatedReply.split(/\s+/).filter(Boolean).length} Kata</span>
+
+                {/* API Key Input */}
+                <div className="form-field">
+                  <label className="form-label" htmlFor="api-key">
+                    API Key
+                  </label>
+                  <div className="input-wrapper">
+                    <span className="input-icon">🔑</span>
+                    <input
+                      id="api-key"
+                      className="text-input"
+                      type="password"
+                      placeholder="Masukkan API Key..."
+                      value={profileApiKey}
+                      onChange={(e) => setProfileApiKey(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Custom URL settings toggle */}
+                <button className="settings-toggle" onClick={() => setShowBaseUrl(!showBaseUrl)}>
+                  {showBaseUrl ? '▼ Sembunyikan Custom Base URL' : '▶ Tampilkan Custom Base URL'}
+                </button>
+
+                {/* Custom Base URL Input */}
+                {showBaseUrl && (
+                  <div className="form-field">
+                    <label className="form-label" htmlFor="custom-url">
+                      Custom Base URL
+                    </label>
+                    <div className="input-wrapper">
+                      <span className="input-icon">🌐</span>
+                      <input
+                        id="custom-url"
+                        className="text-input"
+                        type="text"
+                        placeholder="https://api.openai.com/v1"
+                        value={profileBaseUrl}
+                        onChange={(e) => setProfileBaseUrl(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Model Select Options Toggle */}
+                <div className="form-field">
+                  <div className="form-label">
+                    <span>Engine / Model</span>
+                    <button 
+                      className="settings-toggle" 
+                      onClick={() => setIsCustomModel(!isCustomModel)}
+                      style={{ textDecoration: 'underline' }}
+                    >
+                      {isCustomModel ? 'Pilih dari Daftar' : 'Tulis Manual'}
+                    </button>
+                  </div>
+
+                  {isCustomModel ? (
+                    <div className="input-wrapper">
+                      <span className="input-icon">⚙️</span>
+                      <input
+                        className="text-input"
+                        type="text"
+                        placeholder="Contoh: grok-beta, deepseek-chat..."
+                        value={profileModel}
+                        onChange={(e) => setProfileModel(e.target.value)}
+                      />
+                    </div>
+                  ) : (
+                    <select
+                      className="select-input"
+                      value={MODELS.some(m => m.value === profileModel) ? profileModel : 'gemini-3.5-flash'}
+                      onChange={(e) => setProfileModel(e.target.value)}
+                    >
+                      {MODELS.map(m => (
+                        <option key={m.value} value={m.value}>
+                          {m.label} ({m.provider.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* Save & Delete Profile Buttons */}
+                <div className="profile-actions-row">
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={() => {
+                      handleSaveProfile();
+                      setIsSettingsOpen(false); // collapse settings after saving
+                    }}
+                    style={{ flex: 1, padding: '0.7rem' }}
+                  >
+                    {profileSaveSuccess ? '✅ Tersimpan' : '💾 Simpan & Tutup'}
+                  </button>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => handleDeleteProfile(activeProfileId)}
+                    disabled={profiles.length <= 1}
+                    title="Hapus Profil Ini"
+                    style={{ padding: '0.7rem 1rem' }}
+                  >
+                    🗑️
+                  </button>
                 </div>
               </div>
-            )}
-          </section>
-
-          {/* History Panel */}
-          <section className="glass-panel">
-            <div className="history-header">
-              <h2 className="panel-title" style={{ margin: 0, border: 'none', padding: 0 }}>
-                <span>📜</span> Riwayat Balasan
-              </h2>
-              {historyLog.length > 0 && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <span className="history-count">{historyLog.length} Balasan</span>
-                  <button className="clear-history-btn" onClick={handleClearHistory}>Hapus Semua</button>
-                </div>
-              )}
             </div>
+          )}
+        </aside>
 
-            <div className="history-list">
-              {historyLog.length === 0 ? (
-                <div className="history-empty">
-                  <span>📭</span>
-                  <p>Belum ada riwayat balasan. Balasan Anda akan disimpan di sini.</p>
-                </div>
+        {/* Main Generator Box (Always visible at the top in split-screen/mobile) */}
+        <section className="glass-panel generator-panel">
+          <div className="generator-header-row">
+            <h2 className="panel-title" style={{ border: 'none', margin: 0, paddingBottom: 0 }}>
+              <span>✍️</span> Generator Balasan
+            </h2>
+            <span className="char-counter">{tweetInput.length} karakter</span>
+          </div>
+
+          {/* Tone Tab Selector Bar (Visible above textarea for quick access) */}
+          <div className="tone-tabs-bar">
+            {TONES.map(t => (
+              <button
+                key={t.label}
+                className={`tone-tab ${selectedTone === t.label ? 'active' : ''}`}
+                data-tone={t.label}
+                onClick={() => setSelectedTone(t.label)}
+                title={t.description}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+
+          <textarea
+            id="tweet-input"
+            className="tweet-textarea"
+            placeholder="Tempel Tweet / Postingan X yang ingin Anda balas di sini..."
+            value={tweetInput}
+            onChange={(e) => setTweetInput(e.target.value)}
+            disabled={isGenerating}
+            style={{ height: '120px' }}
+          />
+
+          <div className="generator-actions">
+            <button 
+              className="btn btn-primary" 
+              onClick={handleGenerate}
+              disabled={isGenerating || !tweetInput.trim() || (!profileApiKey && !tweetInput.trim().startsWith('[menu:'))}
+            >
+              {isGenerating ? (
+                <>
+                  <span className="spinner"></span>
+                  Generating...
+                </>
               ) : (
-                historyLog.map(item => (
-                  <article key={item.id} className="history-item">
-                    <div className="history-item-header">
-                      <p className="history-item-tweet" title={item.tweetContent}>
-                        Tweet: "{item.tweetContent}"
-                      </p>
-                      <div className="history-item-actions">
-                        <button
-                          className="history-item-btn"
-                          onClick={() => handleCopy(item.replyContent, item.id)}
-                          title="Salin"
-                        >
-                          {copiedId === item.id ? '✅' : '📋'}
-                        </button>
-                        <button
-                          className="history-item-btn delete"
-                          onClick={() => handleDeleteHistory(item.id)}
-                          title="Hapus"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                    <p className="history-item-reply">{item.replyContent}</p>
-                    <div className="history-item-footer">
-                      <div className="history-item-tags">
-                        <span className="history-tag tone">{item.toneChosen}</span>
-                        <span className="history-tag">{item.modelUsed}</span>
-                      </div>
-                      <span>{item.timestamp}</span>
-                    </div>
-                  </article>
-                ))
+                <>
+                  <span>⚡</span>
+                  Generate Reply
+                </>
               )}
-            </div>
-          </section>
+            </button>
+            <button 
+              className="btn btn-secondary"
+              onClick={() => {
+                setTweetInput('');
+                setGeneratedReply(null);
+                setApiError(null);
+              }}
+              disabled={isGenerating || !tweetInput}
+            >
+              Clear
+            </button>
+          </div>
 
-        </main>
+          {/* Error UI Card */}
+          {apiError && (
+            <div className="error-card">
+              <span>⚠️ {apiError}</span>
+              <button className="error-close-btn" onClick={() => setApiError(null)}>×</button>
+            </div>
+          )}
+
+          {/* Reply Output Card */}
+          {generatedReply && (
+            <div className="output-card">
+              <div className="output-header">
+                <span className="output-badge">BALASAN DIHASILKAN ({selectedTone})</span>
+                <div className="output-actions">
+                  <button 
+                    className="action-icon-btn"
+                    onClick={() => handleCopy(generatedReply, 'output')}
+                    title="Salin Balasan"
+                  >
+                    {copiedId === 'output' ? '✅' : '📋'}
+                  </button>
+                </div>
+              </div>
+              <p className="output-text">{generatedReply}</p>
+              <div className="output-metadata">
+                <span>Profil: {activeProfile.name}</span>
+                <span>•</span>
+                <span>Engine: {usedModel || profileModel}</span>
+                <span>•</span>
+                <span>{generatedReply.split(/\s+/).filter(Boolean).length} Kata</span>
+              </div>
+            </div>
+          )}
+        </section>
+
+        {/* History Panel */}
+        <section className="glass-panel history-panel">
+          <div className="history-header">
+            <h2 className="panel-title" style={{ margin: 0, border: 'none', padding: 0 }}>
+              <span>📜</span> Riwayat Balasan
+            </h2>
+            {historyLog.length > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span className="history-count">{historyLog.length}</span>
+                <button className="clear-history-btn" onClick={handleClearHistory}>Hapus Semua</button>
+              </div>
+            )}
+          </div>
+
+          <div className="history-list">
+            {historyLog.length === 0 ? (
+              <div className="history-empty">
+                <span>📭</span>
+                <p>Belum ada riwayat balasan. Balasan Anda akan disimpan di sini.</p>
+              </div>
+            ) : (
+              historyLog.map(item => (
+                <article key={item.id} className="history-item">
+                  <div className="history-item-header">
+                    <p className="history-item-tweet" title={item.tweetContent}>
+                      Tweet: "{item.tweetContent}"
+                    </p>
+                    <div className="history-item-actions">
+                      <button
+                        className="history-item-btn"
+                        onClick={() => handleCopy(item.replyContent, item.id)}
+                        title="Salin"
+                      >
+                        {copiedId === item.id ? '✅' : '📋'}
+                      </button>
+                      <button
+                        className="history-item-btn delete"
+                        onClick={() => handleDeleteHistory(item.id)}
+                        title="Hapus"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                  <p className="history-item-reply">{item.replyContent}</p>
+                  <div className="history-item-footer">
+                    <div className="history-item-tags">
+                      <span className="history-tag tone">{item.toneChosen}</span>
+                      <span className="history-tag">{item.modelUsed}</span>
+                    </div>
+                    <span>{item.timestamp}</span>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+
       </div>
 
       {/* Footer */}
