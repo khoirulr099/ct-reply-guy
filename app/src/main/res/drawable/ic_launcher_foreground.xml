@@ -1,0 +1,18 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Twitter Blue chat bubble body -->
+    <path
+        android:fillColor="#1D9BF0"
+        android:pathData="M24,24h60a8,8 0 0,1 8,8v32a8,8 0 0,1 -8,8h-36l-14,14v-14h-10a8,8 0 0,1 -8,-8v-32a8,8 0 0,1 8,-8z" />
+    <!-- White Shell Prompt '>' symbol -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M38,38c0,-0.55 0.45,-1 1,-1c0.26,0 0.51,0.1 0.71,0.29l10,10c0.39,0.39 0.39,1.02 0,1.41l-10,10c-0.39,0.39 -1.02,0.39 -1.41,0c-0.39,-0.39 -0.39,-1.02 0,-1.41l9.29,-9.29l-9.29,-9.29c-0.19,-0.2 -0.3,-0.45 -0.3,-0.71z" />
+    <!-- Blinking neon cursor '_' line -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M52,54h14v3h-14z" />
+</vector>
